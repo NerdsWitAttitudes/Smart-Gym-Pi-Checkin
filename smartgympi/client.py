@@ -7,6 +7,7 @@ import requests
 from smartgympi.scan import BluetoothClient
 
 config = None
+log = None
 
 parser = argparse.ArgumentParser(
     description="""
@@ -29,6 +30,9 @@ class Client(object):
         global config
         config = config_parser.read(args.config)
 
+        global log
+        log = logging.getLogger(__name__)
+
         self.bluetooth_client = BluetoothClient()
         self.remote_url = ''
 
@@ -45,12 +49,12 @@ class Client(object):
         request = requests.post(self.remote_url, data=body)
 
         if request.status_code == 200:
-            print("Success")
-            print(request.text)
+            log.info("Success")
+            log.info(request.text)
         else:
-            print("Something went wrong..")
-            print("Status code: {}".format(request.status_code))
-            print(request.text)
+            log.critical("Something went wrong..")
+            log.critical("Status code: {}".format(request.status_code))
+            log.critical(request.text)
 
 
 if __name__ == "__main__":
