@@ -2,8 +2,9 @@ import bluetooth
 
 
 class BluetoothClient(object):
-    def __init__(self):
-        self.address = bluetooth.read_local_bdaddr()
+    def __init__(self, config):
+        # Read the device's MAC address and removes any line breaks
+        self.device_address = config['app:main']['local_MAC_address']
 
     def scan(self):
         print("scanning for devices")
