@@ -1,6 +1,7 @@
 import argparse
 import configparser
 import logging
+import logging.config
 import sys
 
 import requests
@@ -24,11 +25,6 @@ parser.add_argument(
 
 class Client(object):
     def __init__(self):
-        args = parser.parse_args()
-
-        config = configparser.ConfigParser()
-        config.read(args.config)
-
         self.bluetooth_client = BluetoothClient(config)
         self.remote_url = config['app:main']['remote_url']
 
@@ -66,5 +62,10 @@ class Client(object):
 
 
 if __name__ == "__main__":
+    args = parser.parse_args()
+    config = configparser.ConfigParser()
+    config.read(args.config)
+    logging.config.fileConfig(config)
+
     client = Client()
     client.main()
