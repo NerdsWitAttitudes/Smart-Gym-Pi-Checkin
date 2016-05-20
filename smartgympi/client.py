@@ -34,19 +34,25 @@ class Client(object):
 
     def main(self):
         try:
-            name, address, device_class = self.bluetooth_client.scan()
+            devices = self.bluetooth_client.scan()
+            for device in devices:
+                log.info("Device found: {}".format(device))
+                log.info("Persisting..")
+                self._persist(
+                    address=device[0],
+                    name=device[1],
+                    device_class=device[2]
+                )
         except OSError:
             log.critical("No bluetooth interface found. Terminating...")
             sys.exit()
 
-        self._persist(name, address, device_class)
-
-    def _persist(self, name, address, device_class):
+    def _persist(self, address, name, device_class):
         body = {
             "name": name,
             "device_address": address,
             "device_class": device_class,
-            "client_address": self.bluetooth_client.address
+            "client_address": self.bluetooth_client.local_address
         }
         request = requests.post(self.remote_url, data=body)
 
