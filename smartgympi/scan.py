@@ -5,12 +5,10 @@ log = logging.getLogger()
 
 
 class BluetoothClient(object):
-    local_address = None
 
     def __init__(self, config):
         # Read the device's MAC address and removes any line breaks
-        global local_address
-        local_address = config['app:main']['local_MAC_address']
+        self.local_address = config['app:main']['local_MAC_address']
 
     def scan(self):
         log.info("scanning for devices")

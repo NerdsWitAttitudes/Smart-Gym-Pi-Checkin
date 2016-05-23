@@ -3,6 +3,7 @@ import configparser
 import logging
 import logging.config
 import sys
+import threading
 
 import requests
 
@@ -30,15 +31,15 @@ class Client(object):
 
     def main(self):
         try:
-            devices = self.bluetooth_client.scan()
-            for device in devices:
-                log.info("Device found: {}".format(device))
-                log.info("Persisting..")
-                self._persist(
-                    address=device[0],
-                    name=device[1],
-                    device_class=device[2]
-                )
+            while True:
+                devices = self.bluetooth_client.scan()
+                for device in devices:
+                    log.info("Device found: {}".format(device))
+                    log.info("Persisting..")
+                    persist_thread = threading.Thread(
+                        target=self._persist,
+                        args=(device[0], device[1], device[2]))
+                    persist_thread.start()
         except OSError:
             log.critical("No bluetooth interface found. Terminating...")
             sys.exit()
@@ -50,7 +51,7 @@ class Client(object):
             "device_class": device_class,
             "client_address": self.bluetooth_client.local_address
         }
-        request = requests.post(self.remote_url, data=body)
+        request = requests.post(self.remote_url, json=body)
 
         if request.status_code == 200:
             log.info("Success")
