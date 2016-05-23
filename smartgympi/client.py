@@ -7,7 +7,7 @@ import threading
 
 import requests
 
-from smartgympi.scan import BluetoothClient
+from smartgympi.bluetooth import BluetoothClient
 
 log = logging.getLogger()
 
