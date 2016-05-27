@@ -63,6 +63,10 @@ class Client(object):
             sys.exit()
 
     def _persist(self, address, name, device_class):
+        redis_client.setex(address,
+                           self.expiration_time,
+                           name)
+
         body = {
             "name": name,
             "device_address": address,
@@ -71,17 +75,15 @@ class Client(object):
         }
         request = requests.post(self.remote_url, json=body)
 
+        log.info("Status code: {}".format(request.status_code))
         if request.status_code == 200:
             log.info("Success")
             log.info(request.text)
-            redis_client.setex(address,
-                               self.expiration_time,
-                               name)
+        elif request.status_code == 404:
+            log.info("Device not found")
         else:
             log.critical("Something went wrong..")
-            log.critical("Status code: {}".format(request.status_code))
             log.critical(request.text)
-
 
 if __name__ == "__main__":
     args = parser.parse_args()
