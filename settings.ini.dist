@@ -1,0 +1,38 @@
+[app:main]
+remote_url = 
+local_MAC_address =
+max_threads = 
+
+[redis]
+# time it should take for a key to expire in seconds
+expiration_time =
+host = localhost
+port = 6379
+db = 0
+
+[loggers]
+keys = root, smartgympi
+
+[handlers]
+keys = console
+
+[formatters]
+keys = generic
+
+[logger_root]
+level = INFO
+handlers = console
+
+[logger_smartgympi]
+level = INFO
+handlers = console
+qualname = smartgymapi
+
+[handler_console]
+class = StreamHandler
+args = (sys.stderr,)
+level = NOTSET
+formatter = generic
+
+[formatter_generic]
+format = %(asctime)s %(levelname)-5.5s [%(name)s:%(lineno)s][%(threadName)s] %(message)s
