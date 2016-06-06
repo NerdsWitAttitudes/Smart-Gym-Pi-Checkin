@@ -1,4 +1,5 @@
 import argparse
+import base64
 import configparser
 import logging
 import logging.config
@@ -33,6 +34,7 @@ class Client(object):
         self.remote_url = config['app:main']['remote_url']
         self.expiration_time = int(config['redis']['expiration_time'])
         self.max_threads = int(config['app:main']['max_threads'])
+        self.auth_header = self.get_auth_header()
 
     def main(self):
         try:
@@ -73,17 +75,65 @@ class Client(object):
             "device_class": device_class,
             "client_address": self.bluetooth_client.local_address
         }
-        request = requests.post(self.remote_url, json=body)
+        request = requests.post(self.remote_url, json=body,
+                                headers=self.auth_header)
 
         log.info("Status code: {}".format(request.status_code))
         if request.status_code == 200:
             log.info("Success")
             log.info(request.text)
+        elif request.status_code == 403:
+            # This is due to the access token expiring.
+            # So we request a new token and retry the request
+            log.info("Access token expired")
+            self.auth_header = self.get_auth_header()
+            self._persist(address, name, device_class)
         elif request.status_code == 404:
             log.info("Device not found")
         else:
             log.critical("Something went wrong..")
             log.critical(request.text)
+
+    def get_auth_header(self):
+        try:
+            client_id = config['oauth']['client_id']
+            client_secret = config['oauth']['client_secret']
+            token_url = config['oauth']['access_token_url']
+        except KeyError:
+            log.critical("OAuth settings not correctly specified",
+                         exc_info=True)
+            sys.exit()
+
+        client_credentials = '{}:{}'.format(
+            client_id, client_secret)
+
+        # b64 encode expects bytes. After that we convert from bytes to string
+        encoded_client_credentials = base64.b64encode(
+            client_credentials.encode('utf-8')).decode('utf-8')
+        client_auth_header = {
+            'Authorization': 'Basic {}'.format(encoded_client_credentials)
+        }
+        request_body = {'grant_type': 'client_credentials'}
+
+        access_token_request = requests.post(token_url,
+                                             json=request_body,
+                                             headers=client_auth_header)
+
+        if access_token_request.status_code != 200:
+            # Without the access code we can't persist any devices
+            log.critical("Can't get access token")
+            log.critical(access_token_request.status_code)
+            sys.exit()
+
+        response_body = access_token_request.json()
+
+        auth_header = {
+            'Authorization': '{} {}'.format(
+                response_body['token_type'],
+                response_body['access_token'])
+        }
+
+        return auth_header
 
 if __name__ == "__main__":
     args = parser.parse_args()
