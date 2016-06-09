@@ -10,6 +10,11 @@ host = localhost
 port = 6379
 db = 0
 
+[oauth]
+access_token_url =
+client_id =
+client_secret =
+
 [loggers]
 keys = root, smartgympi
 
