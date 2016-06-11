@@ -40,6 +40,7 @@ class Client(object):
         try:
             while True:
                 devices = self.bluetooth_client.scan()
+                # Handle all devices found in this scan
                 for device in devices:
                     if threading.active_count() == self.max_threads:
                         log.critical("Number of maximum threads reached")
@@ -48,13 +49,16 @@ class Client(object):
 
                     log.info("Device found: {}".format(device))
                     if redis_client.get(device[0]):
-                        # The device is foudn in the cache which means it
+                        # The device is found in the cache which means it
                         # was persisted very recently. We should not try
                         # persisting it again untill it's expired.
                         log.info('device found in cache, continuing..')
                         continue
 
                     log.info("Persisting..")
+
+                    # Create new thread to persist the device information
+                    # to the API
                     persist_thread = threading.Thread(
                         target=self._persist,
                         args=(device[0], device[1], device[2]))
@@ -65,6 +69,7 @@ class Client(object):
             sys.exit()
 
     def _persist(self, address, name, device_class):
+        # Cache the device so we won't flood the API with requests
         redis_client.setex(address,
                            self.expiration_time,
                            name)
@@ -95,6 +100,7 @@ class Client(object):
             log.critical(request.text)
 
     def get_auth_header(self):
+        # Attempt to get all the needed information from config
         try:
             client_id = config['oauth']['client_id']
             client_secret = config['oauth']['client_secret']
@@ -115,6 +121,7 @@ class Client(object):
         }
         request_body = {'grant_type': 'client_credentials'}
 
+        # post the request for an access token
         access_token_request = requests.post(token_url,
                                              json=request_body,
                                              headers=client_auth_header)
@@ -127,6 +134,7 @@ class Client(object):
 
         response_body = access_token_request.json()
 
+        # Build the authentication header with the newly received access token
         auth_header = {
             'Authorization': '{} {}'.format(
                 response_body['token_type'],
