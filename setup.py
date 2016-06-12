@@ -15,7 +15,7 @@ requires = [
 ]
 
 setup(name='smartgympi',
-      version='1.0',
+      version='1.01',
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
           "Programming Language :: Python"
